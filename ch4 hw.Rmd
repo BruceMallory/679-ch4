@@ -7,13 +7,14 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(ISLR)
 ```
 
 ## 4.6
-Suppose we collect data for a group of students in a statistics class with variables X1 = hours studied, X2 = undergrad GPA, and Y = receive an A. We fit a logistic regression and produce estimated coefficient, βˆ0 = −6, βˆ1 = 0.05, βˆ2 = 1.
+Suppose we collect data for a group of students in a statistics class with variables X1 = hours studied, X2 = undergrad GPA, and Y = receive an A. We fit a logistic regression and produce estimated coefficient, beta.0=-6, beta.1=0.05, beta.2=1.
 (a) Estimate the probability that a student who studies for 40 h and has an undergrad GPA of 3.5 gets an A in the class.
 (b) How many hours would the student in part (a) need to study to have a 50 % chance of getting an A in the class?
-```{r cars}
+```{r}
 beta.0 <- -6
 beta.1 <- 0.05
 beta.2 <- 1
@@ -21,18 +22,88 @@ hrs.a <- 40
 gpa <- 3.5
 regression <- beta.0 + beta.1*hrs.a + beta.2*gpa
 prob.A <- exp(regression)/(1+exp(regression))
-print(paste0("The probability of an A is ", 100*round(prob.A,2),"%"))
+print(paste0("a) The probability of an A is ", 100*round(prob.A,2),"%"))
 
 prob.B <- .50
-log.odds <- (prob.B/(1-prob.B))
+log.odds <- log(prob.B/(1-prob.B))
+hrs.b <- (log.odds - beta.0 - beta.2*gpa)/beta.1
+print("b) To have a 50% chance of getting an A,")
+print(paste0("the student would need to study for ", hrs.b," hours."))
 ```
 
-## Including Plots
+## 4.8
+Suppose that we take a data set, divide it into equally-sized training and test sets, and then try out two different classification procedures. First we use logistic regression and get an error rate of 20 % on the training data and 30 % on the test data. Next we use 1-nearest neigh- bors (i.e. K = 1) and get an average error rate (averaged over both test and training data sets) of 18%. Based on these results, which method should we prefer to use for classification of new observations? Why?
 
-You can also embed plots, for example:
+Answer: The 20% training, 30% test implies that the logistic regression has over-fit the data.  And for comparison with the k=1 KNN we would want to compare the 20% error rate with the 18% error rate, since the KNN model is also prone to over-fitting (AND, with a 1-NN nearest neighbor, the model is fitting exactly to each response), and without knowing the number of parameters and the sample size, it makes it hard to judge the usefulness of the 18% error rate.  And if they are giving us an average error rate (a point I missed in the first reading of this problem), then with a 1-NN method, the training data set has a 0% error rate, meaning that the test training data set has a 36% error rate.  THUS use logistic with 30%.
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+## 4.9
+This problem has to do with odds.
+(a) On average, what fraction of people with an odds of 0.37 of
+defaulting on their credit card payment will in fact default?
+(b) Suppose that an individual has a 16% chance of defaulting on her credit card payment. What are the odds that she will de- fault?
+
+```{r}
+odds.default = 0.37
+odds.no.default = 1
+prob.default = odds.default/(odds.default + odds.no.default)
+print(paste0("a) If the odds of default are 0.37, then the probability of defaulting is ", 
+             100*round(prob.default,2), "%."))
+prob.default.b <- .16
+num.default <- prob.default.b
+num.no.default <- 1-prob.default.b
+odds.default.b <- num.default/num.no.default
+print(paste0("b) If the probability of defaulting is 16%, then the odds of defaulting is ", 
+             round(odds.default.b,2)))
+
+```
+## 4.10
+This question should be answered using the Weekly data set, which is part of the ISLR package. This data is similar in nature to the Smarket data from this chapter’s lab, except that it contains 1,089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+(a) Produce some numerical and graphical summaries of the Weekly data. Do there appear to be any patterns?
+```{r}
+df <- data.frame(Weekly)
+summary(df)
+attach(df)
+pairs(df, col=Direction)
+print("Observations: 1. data is weekly S&P500 index from 1990 to 2010, 2. Looks to be an exponential increase in volume over years, 3. Variablily of the lags appears to have a sinusoidal pattern over years, 4. Not noticing a way to predict Up/Down (no visual pattern black/red)")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+(b) Use the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant? If so, which ones?
+(c) Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+(d) Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+(e) Repeat (d) using LDA.
+(f) Repeat (d) using QDA.
+(g) Repeat (d) using KNN with K = 1.
+(h) Which of these methods appears to provide the best results on
+this data?
+(i) Experiment with different combinations of predictors, includ- ing possible transformations and interactions, for each of the methods. Report the variables, method, and associated confu- sion matrix that appears to provide the best results on the held out data. Note that you should also experiment with values for K in the KNN classifier.
+
+##4.11
+In this problem, you will develop a model to predict whether a given car gets high or low gas mileage based on the Auto data set.
+(a) Create a binary variable, mpg01, that contains a 1 if mpg contains a value above its median, and a 0 if mpg contains a value below its median. You can compute the median using the median() function. Note you may find it helpful to use the data.frame() function to create a single data set containing both mpg01 and the other Auto variables.
+(b) Explore the data graphically in order to investigate the associ- ation between mpg01 and the other features. Which of the other features seem most likely to be useful in predicting mpg01? Scat- terplots and boxplots may be useful tools to answer this ques- tion. Describe your findings.
+(c) Split the data into a training set and a test set.
+(d) Perform LDA on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+(e) Perform QDA on the training data in order to predict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+(f) Perform logistic regression on the training data in order to pre- dict mpg01 using the variables that seemed most associated with mpg01 in (b). What is the test error of the model obtained?
+(g) Perform KNN on the training data, with several values of K, in order to predict mpg01. Use only the variables that seemed most associated with mpg01 in (b). What test errors do you obtain? Which value of K seems to perform the best on this data set?
+
+##4.12
+This problem involves writing functions.
+(a) Write a function, Power(), that prints out the result of raising 2 to the 3rd power. In other words, your function should compute 23 and print out the results.
+Hint: Recall that x^a raises x to the power a. Use the print() function to output the result.
+(b) Create a new function, Power2(), that allows you to pass any two numbers, x and a, and prints out the value of x^a. You can do this by beginning your function with the line 
+-> Power2=function(x,a){
+You should be able to call your function by entering, for instance,
+-> Power2(3,8)
+on the command line. This should output the value of 38, namely, 6, 561.
+(c) Using the Power2() function that you just wrote, compute 103, 817, and 1313.
+(d) Now create a new function, Power3(), that actually returns the result x^a as an R object, rather than simply printing it to the screen. That is, if you store the value x^a in an object called result within your function, then you can simply return() this result, using the following line:
+->return(result)
+The line above should be the last line in your function, before the } symbol.
+(e) Now using the Power3() function, create a plot of f(x) = x2. The x-axis should display a range of integers from 1 to 10, and the y-axis should display x2. Label the axes appropriately, and use an appropriate title for the figure. Consider displaying either the x-axis, the y-axis, or both on the log-scale. You can do this by using log=‘‘x’’, log=‘‘y’’, or log=‘‘xy’’ as arguments to the plot() function.
+(f) Create a function, PlotPower(), that allows you to create a plot of x against x^a for a fixed a and for a range of values of x. For instance, if you call
+-> PlotPower (1:10 ,3)
+then a plot should be created with an x-axis taking on values 1,2,...,10, and a y-axis taking on values 13,23,...,103.
+
+##4.13
+Using the Boston data set, fit classification models in order to predict whether a given suburb has a crime rate above or below the median. Explore logistic regression, LDA, and KNN models using various sub- sets of the predictors. Describe your findings.
