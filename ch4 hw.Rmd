@@ -27,14 +27,13 @@ print(paste0("a) The probability of an A is ", 100*round(prob.A,2),"%"))
 prob.B <- .50
 log.odds <- log(prob.B/(1-prob.B))
 hrs.b <- (log.odds - beta.0 - beta.2*gpa)/beta.1
-print("b) To have a 50% chance of getting an A,")
-print(paste0("the student would need to study for ", hrs.b," hours."))
+print(paste0("b) To have a 50% chance of getting an A, the student would need to study for ", hrs.b," hours."))
 ```
 
 ## 4.8
 Suppose that we take a data set, divide it into equally-sized training and test sets, and then try out two different classification procedures. First we use logistic regression and get an error rate of 20 % on the training data and 30 % on the test data. Next we use 1-nearest neigh- bors (i.e. K = 1) and get an average error rate (averaged over both test and training data sets) of 18%. Based on these results, which method should we prefer to use for classification of new observations? Why?
 
-Answer: The 20% training, 30% test implies that the logistic regression has over-fit the data.  And for comparison with the k=1 KNN we would want to compare the 20% error rate with the 18% error rate, since the KNN model is also prone to over-fitting (AND, with a 1-NN nearest neighbor, the model is fitting exactly to each response), and without knowing the number of parameters and the sample size, it makes it hard to judge the usefulness of the 18% error rate.  And if they are giving us an average error rate (a point I missed in the first reading of this problem), then with a 1-NN method, the training data set has a 0% error rate, meaning that the test training data set has a 36% error rate.  THUS use logistic with 30%.
+ANSWER: The 20% training, 30% test implies that the logistic regression has over-fit the data.  And for comparison with the k=1 KNN we would want to compare the 20% error rate with the 18% error rate, since the KNN model is also prone to over-fitting (AND, with a 1-NN nearest neighbor, the model is fitting exactly to each response), and without knowing the number of parameters and the sample size, it makes it hard to judge the usefulness of the 18% error rate.  And if they are giving us an average error rate (a point I missed in the first reading of this problem), then with a 1-NN method, the training data set has a 0% error rate, meaning that the test training data set has a 36% error rate.  THUS use logistic with 30%.
 
 ## 4.9
 This problem has to do with odds.
@@ -64,13 +63,65 @@ df <- data.frame(Weekly)
 summary(df)
 attach(df)
 pairs(df, col=Direction)
-print("Observations: 1. data is weekly S&P500 index from 1990 to 2010, 2. Looks to be an exponential increase in volume over years, 3. Variablily of the lags appears to have a sinusoidal pattern over years, 4. Not noticing a way to predict Up/Down (no visual pattern black/red)")
+cor(df[,-9])
 ```
 
+ANSWER: My observations:  
+1. data is weekly S&P500 index from 1990 to 2010,  
+2. Looks to be an exponential increase in volume over years,  
+3. Variablily of the lags appears to have a sinusoidal pattern over years,  
+4. Not noticing a way to predict Up/Down (no visual pattern black/red)
+
 (b) Use the full data set to perform a logistic regression with Direction as the response and the five lag variables plus Volume as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically significant? If so, which ones?
+```{r}
+fit.b <- glm(Direction~.-Year -Today,df,family="binomial")
+summary(fit.b)
+print("b) Lag2 appears to be statistically significant.")
+```
 (c) Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression.
+```{r}
+fit.b.pred <- ifelse(predict(fit.b,type="response")>.5,"Up","Down")
+table(fit.b.pred, Direction)
+success.rate <- 100*round(mean(fit.b.pred==Direction),3)
+sensitivity <- 100*round(sum(fit.b.pred==Direction&(fit.b.pred=="Down")==T)/sum(Direction=="Down"),3)
+specificity <- 100*round(sum(fit.b.pred==Direction&(fit.b.pred=="Up")==T)/sum(Direction=="Up"),3)
+cat(" The success rate is", success.rate, "%","\n",
+    "The sensitivity is", sensitivity, "%", "\n",
+    "And the specificity is", specificity, "%")
+```
+
+c) ANSWER: The success rate is better than a coin toss. BUT the specificity (ability to correctly predict a down week) is quite low.  While the ability to correctly predict the Up weeks is good.
+
 (d) Now fit the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+```{r}
+df.train <- df[Year<2009, ]
+df.test <- df[Year>2008, ]
+fit.d <- glm(Direction~Lag2, data=df.train, family="binomial")
+fit.d.pred <- ifelse(predict(fit.d, newdata=df.test, type="response")>.5,"Up","Down")
+detach(df)
+attach(df.test)
+table(fit.d.pred, Direction)
+success.rate <- 100*round(mean(fit.d.pred==Direction),3)
+sensitivity <- 100*round(sum(fit.d.pred==Direction&(fit.d.pred=="Down")==T)/sum(Direction=="Down"),3)
+specificity <- 100*round(sum(fit.d.pred==Direction&(fit.d.pred=="Up")==T)/sum(Direction=="Up"),3)
+cat(" The success rate is", success.rate, "%","\n",
+    "The sensitivity is", sensitivity, "%", "\n",
+    "And the specificity is", specificity, "%")
+
+```
+
 (e) Repeat (d) using LDA.
+```{r}
+fit.e <- lda(Direction~Lag2, data=df.train, family="binomial")
+fit.e.pred <- predict(fit.e, df.test)
+table(fit.e.pred$class, Direction)
+success.rate <- 100*round(mean(fit.e.pred$class==Direction),3)
+sensitivity <- 100*round(sum(fit.e.pred$class==Direction&(fit.e.pred$class=="Down")==T)/sum(Direction=="Down"),3)
+specificity <- 100*round(sum(fit.e.pred$class==Direction&(fit.e.pred$class=="Up")==T)/sum(Direction=="Up"),3)
+cat(" The success rate is", success.rate, "%","\n",
+    "The sensitivity is", sensitivity, "%", "\n",
+    "And the specificity is", specificity, "%")
+```
 (f) Repeat (d) using QDA.
 (g) Repeat (d) using KNN with K = 1.
 (h) Which of these methods appears to provide the best results on
